@@ -1,5 +1,7 @@
 package com.RNFetchBlob;
 
+import android.util.Log;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -83,6 +85,8 @@ public class RNFetchBlobUtils {
             builder.hostnameVerifier(new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
+                    Log.d("OLALA verify", hostname);
+                    Log.d("OLALA verify", session.toString());
                     return true;
                 }
             });
