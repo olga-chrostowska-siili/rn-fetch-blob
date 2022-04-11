@@ -55,7 +55,7 @@ public class RNFetchBlobUtils {
                 .emit(RNFetchBlobConst.EVENT_MESSAGE, args);
     }
 
-    public static OkHttpClient.Builder getUnsafeOkHttpClient(OkHttpClient client, String trustyCn) {
+    public static OkHttpClient.Builder getUnsafeOkHttpClient(OkHttpClient client, final String trustyCn) {
         try {
             // Create a trust manager that does not validate certificate chains
             final X509TrustManager x509TrustManager = new X509TrustManager() {
