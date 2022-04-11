@@ -451,13 +451,56 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 }
 
 
+
 - (void) URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable credantial))completionHandler
 {
-    if ([[options valueForKey:CONFIG_TRUSTY] boolValue]) {
-        completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
-    } else {
+    
+    void (^defaultHandling)(void) = ^{
         completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+    };
+    
+    
+    if (![[options valueForKey:CONFIG_TRUSTY] boolValue]) {
+        NSLog(@"trusty param not set, proceeding with defaultHandling");
+        defaultHandling();
+        return;
     }
+    
+    if (![[options valueForKey:CONFIG_TRUSTY_CN] stringValue]) {
+        NSLog(@"trusty param set, but trustyCn not set, proceeding with defaultHandling");
+        defaultHandling();
+        return;
+    }
+    
+    NSString *protocol = challenge.protectionSpace.protocol;
+    if (![protocol isEqualToString:@"https"]) {
+        NSLog(@"trusty param set, but protocol is not https, proceed with defaultHandling");
+        defaultHandling();
+        return;
+    }
+    
+    SecTrustRef trust = challenge.protectionSpace.serverTrust;
+    CFIndex certificatesCount = SecTrustGetCertificateCount(trust);
+    if (certificatesCount == 0) {
+        NSLog(@"trusty param set, but certificatesCount is 0, proceed with defaultHandling");
+        defaultHandling();
+        return;
+    }
+    
+    SecCertificateRef firstCert = SecTrustGetCertificateAtIndex(trust, 0);
+    CFStringRef certCommonNameRef = NULL;
+    SecCertificateCopyCommonName(firstCert, &certCommonNameRef);
+    NSString *certCommonName = (__bridge NSString *)certCommonNameRef;
+    NSString *configTrustyCommonName = [options valueForKey:CONFIG_TRUSTY_CN];
+        
+    // Compare
+    if (![certCommonName isEqualToString:configTrustyCommonName]) {
+        NSLog(@"trusty param set, but commonName does not match expected one, proceed with NSURLSessionAuthChallengePerformDefaultHandling");
+        defaultHandling();
+        return;
+    }
+    
+    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
 }
 
 

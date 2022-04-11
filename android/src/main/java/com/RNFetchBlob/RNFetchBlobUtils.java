@@ -55,7 +55,7 @@ public class RNFetchBlobUtils {
                 .emit(RNFetchBlobConst.EVENT_MESSAGE, args);
     }
 
-    public static OkHttpClient.Builder getUnsafeOkHttpClient(OkHttpClient client) {
+    public static OkHttpClient.Builder getUnsafeOkHttpClient(OkHttpClient client, String trustyCn) {
         try {
             // Create a trust manager that does not validate certificate chains
             final X509TrustManager x509TrustManager = new X509TrustManager() {
@@ -85,6 +85,7 @@ public class RNFetchBlobUtils {
             builder.hostnameVerifier(new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
+                    Log.d("OLALA trustyCn", trustyCn);
                     Log.d("OLALA verify", hostname);
                     Log.d("OLALA verify", session.toString());
                     return true;

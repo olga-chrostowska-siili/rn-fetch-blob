@@ -10,6 +10,7 @@ class RNFetchBlobConfig {
     public String appendExt;
     public ReadableMap addAndroidDownloads;
     public Boolean trusty;
+    public String trustyCn;
     public Boolean wifiOnly = false;
     public String key;
     public String mime;
@@ -27,6 +28,7 @@ class RNFetchBlobConfig {
         this.path = options.hasKey("path") ? options.getString("path") : null;
         this.appendExt = options.hasKey("appendExt") ? options.getString("appendExt") : "";
         this.trusty = options.hasKey("trusty") ? options.getBoolean("trusty") : false;
+        this.trustyCn = options.hasKey("trustyCn") ? options.getString("trustyCn") : "";
         this.wifiOnly = options.hasKey("wifiOnly") ? options.getBoolean("wifiOnly") : false;
         if(options.hasKey("addAndroidDownloads")) {
             this.addAndroidDownloads = options.getMap("addAndroidDownloads");
