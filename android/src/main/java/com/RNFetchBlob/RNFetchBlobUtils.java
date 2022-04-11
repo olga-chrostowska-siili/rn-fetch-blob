@@ -7,7 +7,12 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.security.MessageDigest;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -85,9 +90,48 @@ public class RNFetchBlobUtils {
             builder.hostnameVerifier(new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
-                    Log.d("OLALA trustyCn", trustyCn);
-                    Log.d("OLALA verify", hostname);
-                    Log.d("OLALA verify", session.toString());
+                    try {
+                        Certificate[] certificates = session.getPeerCertificates();
+                        if (certificates.length == 0) {
+                            Log.d("RNFetch", "hostnameVerify return false, as there ar no certificates in the chain");
+                            return false;
+                        }
+
+                        Certificate cert = certificates[0];
+                        if (cert instanceof X509Certificate) { 
+                            X509Certificate x509Cert = ( X509Certificate) cert;
+                            String issuerDistinguishedName = x509Cert.getIssuerX500Principal().getName();
+                            String cnRegexPattern = "CN=([^,]*)";
+
+                            Pattern cmPattern = Pattern.compile(cnRegexPattern);
+                            Matcher cmMatcher = cmPattern.matcher(issuerDistinguishedName);
+                    
+                            String commonName = "";
+                            if (cmMatcher.lookingAt()) {
+                                commonName = cmMatcher.group(1);
+                                System.out.println(commonName);
+                            }
+
+                            if (!commonName.equals(trustyCn)) {
+                                Log.d("RNFetch", "hostnameVerify return false, as commonName does not match");
+                                return false;
+                            }
+
+                            Date notValidBefore = x509Cert.getNotBefore();
+                            Date notValidAfter = x509Cert.getNotAfter();
+                            Date now = new Date();
+
+                            if (notValidBefore.after(now) || notValidAfter.before(now)) {
+                                Log.d("RNFetch", "hostnameVerify return false, as certificate has expired");
+                                return false;
+                            }
+                        } else {
+                            return true;
+                        }
+                    } catch (Exception e) {
+                        Log.d("RNFetch", "error obatining certificates, return false");
+                        return false;
+                    }
                     return true;
                 }
             });
